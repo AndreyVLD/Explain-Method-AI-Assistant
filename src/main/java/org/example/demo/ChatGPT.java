@@ -40,7 +40,10 @@ public class ChatGPT {
             String response = new BufferedReader(new InputStreamReader(con.getInputStream())).lines()
                     .reduce((a,b)->a+b).get();
 
+            // Parse response
             JSONObject json = new JSONObject(response);
+
+            // Extract the first response from the choices given by ChatGPT
             JSONObject responseObject = json.getJSONArray("choices").getJSONObject(0);
             return responseObject.getJSONObject("message").getString("content");
 
@@ -51,6 +54,7 @@ public class ChatGPT {
     }
     private static JSONObject getJsonBody(String prompt)
     {
+        // Create the JSON body
         String model = "gpt-3.5-turbo";
         JSONObject data = new JSONObject();
         data.put("model", model);
@@ -60,19 +64,19 @@ public class ChatGPT {
         // Provide conversation history as messages array
         JSONArray messagesArray = new JSONArray();
 
-        // System message
+        // The role of the system is to explain the method
         JSONObject systemMessage = new JSONObject();
         systemMessage.put("role", "system");
         systemMessage.put("content", "I explain Python Methods in Plain English.");
         messagesArray.put(systemMessage);
 
-        // User message
+        // The user provides the prompt
         JSONObject userMessage = new JSONObject();
         userMessage.put("role", "user");
         userMessage.put("content", prompt);
         messagesArray.put(userMessage);
 
-        // Add messages array to data object
+        // Add messages array to JSON body
         data.put("messages", messagesArray);
 
         return data;
@@ -82,8 +86,12 @@ public class ChatGPT {
 
         ClassLoader classLoader = ChatGPT.class.getClassLoader();
         String jsonContent;
+
+        // Read config.json
         try (InputStream inputStream = classLoader.getResourceAsStream("META-INF/config.json")) {
             if(inputStream == null){
+
+                // If config.json is not found, return the key from the top of this file
                 LOG.warn("Could not find config.json");
                 return userKey;
             }
