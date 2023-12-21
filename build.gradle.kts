@@ -2,6 +2,10 @@ plugins {
     id("java")
     id("org.jetbrains.kotlin.jvm") version "1.9.20"
     id("org.jetbrains.intellij") version "1.16.0"
+
+}
+dependencies {
+    implementation("org.json:json:20230227")
 }
 
 group = "org.example"
@@ -10,6 +14,7 @@ version = "1.0-SNAPSHOT"
 repositories {
     mavenCentral()
 }
+
 
 java {
     sourceCompatibility = JavaVersion.VERSION_17
