@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.URI;
 import java.net.URL;
 
 
@@ -24,7 +23,7 @@ public class ChatGPT {
 
         try{
             // Create connection
-            URL obj = new URI(url).toURL();
+            URL obj = new URL(url);
             HttpURLConnection con = (HttpURLConnection) obj.openConnection();
             con.setRequestMethod("POST");
             con.setRequestProperty("Content-Type", "application/json");
@@ -37,8 +36,12 @@ public class ChatGPT {
             con.getOutputStream().write(data.toString().getBytes());
 
             // Get response from OpenAI
-            String response = new BufferedReader(new InputStreamReader(con.getInputStream())).lines()
-                    .reduce((a,b)->a+b).get();
+            StringBuilder responseBuilder = new StringBuilder();
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(con.getInputStream()))) {
+                reader.lines().forEach(responseBuilder::append);
+            }
+
+            String response = responseBuilder.toString();
 
             // Parse response
             JSONObject json = new JSONObject(response);
