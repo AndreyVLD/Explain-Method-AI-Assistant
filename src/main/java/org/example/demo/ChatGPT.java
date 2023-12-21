@@ -11,12 +11,11 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 
 
 public class ChatGPT {
 
+    private static final String userKey = "";
     private static final Logger LOG = Logger.getInstance(ChatGPT.class);
 
     public static String infer(String prompt){
@@ -55,6 +54,8 @@ public class ChatGPT {
         String model = "gpt-3.5-turbo";
         JSONObject data = new JSONObject();
         data.put("model", model);
+        data.put("max_tokens", 150);
+        data.put("temperature", 0.5);
 
         // Provide conversation history as messages array
         JSONArray messagesArray = new JSONArray();
@@ -83,7 +84,8 @@ public class ChatGPT {
         String jsonContent;
         try (InputStream inputStream = classLoader.getResourceAsStream("META-INF/config.json")) {
             if(inputStream == null){
-                throw new IOException("Could not find config.json");
+                LOG.warn("Could not find config.json");
+                return userKey;
             }
             jsonContent = new String(inputStream.readAllBytes());
         } catch (IOException e) {

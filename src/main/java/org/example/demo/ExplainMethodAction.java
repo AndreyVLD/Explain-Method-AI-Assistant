@@ -73,5 +73,4 @@ public class ExplainMethodAction extends AnAction {
         }
     }
 
-
 }
