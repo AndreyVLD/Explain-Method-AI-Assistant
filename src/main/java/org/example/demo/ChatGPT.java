@@ -90,7 +90,7 @@ public class ChatGPT {
         ClassLoader classLoader = ChatGPT.class.getClassLoader();
         String jsonContent;
 
-        // Read config.json
+        // Read config.json to get the API key
         try (InputStream inputStream = classLoader.getResourceAsStream("META-INF/config.json")) {
             if(inputStream == null){
 
