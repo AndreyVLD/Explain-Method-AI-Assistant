@@ -11,10 +11,12 @@ import com.intellij.psi.PsiDocumentManager;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.jetbrains.python.psi.PyFunction;
+import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.openapi.ui.Messages;
 
 import org.jetbrains.annotations.NotNull;
 import java.util.Objects;
+
 
 public class ExplainMethodAction extends AnAction {
     private static final Logger LOG = Logger.getInstance(ExplainMethodAction.class);
@@ -34,7 +36,8 @@ public class ExplainMethodAction extends AnAction {
             SelectionModel selectionModel = editor.getSelectionModel();
             int start = selectionModel.getSelectionStart();
             PsiElement element = psiFile.findElementAt(start);
-            PsiElement method = getMethod(element);
+
+            PsiElement method =  PsiTreeUtil.getParentOfType(element, PyFunction.class);
 
             String explanation = "No method found";
 
@@ -59,18 +62,6 @@ public class ExplainMethodAction extends AnAction {
         PsiFile psiFile = PsiDocumentManager.getInstance(project).getPsiFile(editor.getDocument());
         Objects.requireNonNull(psiFile, "PsiFile cannot be null");
         return psiFile;
-    }
-
-    private PsiElement getMethod(PsiElement element){
-        if(element == null){
-            return null;
-        }
-
-        if(element instanceof PyFunction){
-            return element;
-        }else{
-            return getMethod(element.getParent());
-        }
     }
 
 }
