@@ -58,7 +58,7 @@ public class ChatGPT {
     private static JSONObject getJsonBody(String prompt)
     {
         // Create the JSON body
-        String model = "gpt-3.5-turbo";
+        String model = "gpt-4";
         JSONObject data = new JSONObject();
         data.put("model", model);
         data.put("max_tokens", 150);

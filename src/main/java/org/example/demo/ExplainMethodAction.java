@@ -35,19 +35,11 @@ public class ExplainMethodAction extends AnAction {
             PsiFile psiFile = getPsiFile(editor);
             SelectionModel selectionModel = editor.getSelectionModel();
             int start = selectionModel.getSelectionStart();
-            PsiElement element = psiFile.findElementAt(start);
+            PsiElement selectedElement = psiFile.findElementAt(start);
 
-            PsiElement method =  PsiTreeUtil.getParentOfType(element, PyFunction.class);
+            PyFunction method =  PsiTreeUtil.getParentOfType(selectedElement, PyFunction.class);
 
-            String explanation = "No method found";
-
-            if(method != null) {
-                explanation = ChatGPT.infer("Explain the method " + method.getText() + " in plain English.");
-                if (explanation.equals("Error")) {
-                    explanation = "An error occurred during explanation generation";
-                    LOG.warn(explanation);
-                }
-            }
+            String explanation = getExplanation(method);
 
             Messages.showMessageDialog(explanation, "Method Explanation", Messages.getInformationIcon());
 
@@ -55,6 +47,20 @@ public class ExplainMethodAction extends AnAction {
             LOG.warn("An error occurred during method extraction: ",e);
         }
 
+    }
+
+    @NotNull
+    private static String getExplanation(PyFunction method) {
+        String explanation = "No method found";
+
+        if(method != null) {
+            explanation = ChatGPT.infer("Explain the method " + method.getText() + " in plain English.");
+            if (explanation.equals("Error")) {
+                explanation = "An error occurred during explanation generation";
+                LOG.warn(explanation);
+            }
+        }
+        return explanation;
     }
 
     private PsiFile getPsiFile(Editor editor) {
