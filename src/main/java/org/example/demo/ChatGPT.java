@@ -17,6 +17,11 @@ public class ChatGPT {
     private static final String userKey = "";
     private static final Logger LOG = Logger.getInstance(ChatGPT.class);
 
+    /**
+     * This method sends the prompt to ChatGPT and returns the response
+     * @param prompt The prompt that the user provides to ChatGPT
+     * @return The response from ChatGPT as a String
+     */
     public static String infer(String prompt){
         String apiKey = readJsonKey();
         String url = "https://api.openai.com/v1/chat/completions";
@@ -25,6 +30,8 @@ public class ChatGPT {
             // Create connection
             URL obj = new URL(url);
             HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+
+            // Set headers
             con.setRequestMethod("POST");
             con.setRequestProperty("Content-Type", "application/json");
             con.setRequestProperty("Authorization", "Bearer " + apiKey);
@@ -55,6 +62,12 @@ public class ChatGPT {
             return "Error";
         }
     }
+
+    /**
+     * This method creates the JSON body that is sent to ChatGPT
+     * @param prompt The prompt that the user provides to ChatGPT
+     * @return The JSON body as a JSONObject
+     */
     private static JSONObject getJsonBody(String prompt)
     {
         // Create the JSON body
@@ -85,6 +98,11 @@ public class ChatGPT {
         return data;
     }
 
+    /**
+     * This method reads the API key from config.json.
+     * If config.json is not found, it returns the key from the top of this file
+     * @return The API key as a String
+     */
     private static String readJsonKey(){
 
         ClassLoader classLoader = ChatGPT.class.getClassLoader();
