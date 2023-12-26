@@ -3,6 +3,7 @@ package org.example.demo;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.SelectionModel;
@@ -14,8 +15,10 @@ import com.jetbrains.python.psi.PyFunction;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.openapi.ui.Messages;
 
+import org.apache.commons.lang3.mutable.MutableObject;
 import org.jetbrains.annotations.NotNull;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 
 
 public class ExplainMethodAction extends AnAction {
@@ -27,9 +30,14 @@ public class ExplainMethodAction extends AnAction {
      */
     @Override
     public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
+        Editor editor = anActionEvent.getRequiredData(CommonDataKeys.EDITOR);
         try {
-            Editor editor = anActionEvent.getRequiredData(CommonDataKeys.EDITOR);
-            explainMethod(editor);
+            // Run the action asynchronously to avoid blocking the UI thread
+            CompletableFuture.runAsync(() -> explainMethod(editor))
+                .exceptionally(e -> {
+                    LOG.warn("An error occurred during action execution: ",e);
+                    return null;
+                 });
         }catch (Exception e){
            LOG.warn("An error occurred during action execution: ",e);
         }
@@ -45,10 +53,17 @@ public class ExplainMethodAction extends AnAction {
             PyFunction method = extractMethod(editor);
 
             // Get the explanation for the method from ChatGPT
-            String explanation = getExplanation(method);
+            getExplanationAsync(method).thenAccept(explanation -> {
 
-            // Display the explanation to the user
-            Messages.showMessageDialog(explanation, "Method Explanation", Messages.getInformationIcon());
+                // Display the explanation to the user
+                ApplicationManager.getApplication().invokeLater(() -> Messages
+                        .showMessageDialog(explanation, "Method Explanation", Messages.getInformationIcon()));
+
+            })
+            .exceptionally(e -> {
+                LOG.warn("An error occurred during explanation generation: ",e);
+                return null;
+            });
 
         }catch (Exception e){
             LOG.warn("An error occurred during method extraction: ",e);
@@ -62,16 +77,53 @@ public class ExplainMethodAction extends AnAction {
      * @return The method that the user has selected as a PyFunction
      */
     private PyFunction extractMethod(Editor editor) {
-        // Get the current file
-        PsiFile psiFile = getPsiFile(editor);
+        // Create a mutable object to store the method in
+        MutableObject<PyFunction> method = new MutableObject<>();
 
-        // The selected element is chosen to be the start of the selection or the caret position
-        SelectionModel selectionModel = editor.getSelectionModel();
-        int start = selectionModel.getSelectionStart();
-        PsiElement selectedElement = psiFile.findElementAt(start);
+        // Run the method extraction in a read action to avoid threading issues
+        ApplicationManager.getApplication().runReadAction(() -> {
+            // Get the current file
+            PsiFile psiFile = getPsiFile(editor);
 
-        // Get the method that the selected element is in
-        return PsiTreeUtil.getParentOfType(selectedElement, PyFunction.class);
+            // The selected element is chosen to be the start of the selection or the caret position
+            SelectionModel selectionModel = editor.getSelectionModel();
+            int start = selectionModel.getSelectionStart();
+            PsiElement selectedElement = psiFile.findElementAt(start);
+
+            // Get the method that the selected element is in
+            method.setValue(PsiTreeUtil.getParentOfType(selectedElement, PyFunction.class));
+        });
+
+        return method.getValue();
+    }
+
+    /**
+     * Gets the current file that the user is working on
+     * @param editor The editor that the user is currently using
+     * @return The current file that the user is working on as a PsiFile
+     */
+    private PsiFile getPsiFile(Editor editor) {
+        Project project = Objects.requireNonNull(editor.getProject(), "Project cannot be null");
+        PsiFile psiFile = PsiDocumentManager.getInstance(project).getPsiFile(editor.getDocument());
+        Objects.requireNonNull(psiFile, "PsiFile cannot be null");
+        return psiFile;
+    }
+
+
+    /**
+     * Gets the explanation for the method from ChatGPT asynchronously
+     * @param method The method to get the explanation for as a PyFunction
+     * @return The explanation for the method as a Future String
+     */
+    private CompletableFuture<String> getExplanationAsync(PyFunction method) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return getExplanation(method);
+            } catch (Exception e) {
+                LOG.warn("An error occurred during explanation generation: ", e);
+                return "An error occurred during explanation generation";
+            }
+        });
     }
 
     /**
@@ -87,7 +139,7 @@ public class ExplainMethodAction extends AnAction {
             String methodText = compressAndSummarizeFunction(method);
 
             // Send the following prompt to ChatGPT: "Explain the method <method text> in plain English."
-            // explanation = ChatGPT.infer("Explain the method " + methodText + " in plain English.");
+            explanation = ChatGPT.infer("Explain the method " + methodText + " in plain English.");
             if (explanation.equals("Error")) {
                 explanation = "An error occurred during explanation generation";
                 LOG.warn(explanation);
@@ -97,23 +149,27 @@ public class ExplainMethodAction extends AnAction {
     }
 
     /**
-     * Gets the current file that the user is working on
-     * @param editor The editor that the user is currently using
-     * @return The current file that the user is working on as a PsiFile
+     * Compresses and summarizes the method
+     * @param method The method to compress and summarize as a PyFunction
+     * @return The compressed and summarized method as a String
      */
-    private PsiFile getPsiFile(Editor editor) {
-        Project project = Objects.requireNonNull(editor.getProject(), "Project cannot be null");
-        PsiFile psiFile = PsiDocumentManager.getInstance(project).getPsiFile(editor.getDocument());
-        Objects.requireNonNull(psiFile, "PsiFile cannot be null");
-        return psiFile;
-    }
-
     private String compressAndSummarizeFunction(@NotNull PyFunction method) {
-        String compressedContent = compressing(method);
 
-        return compressedContent;
+        // Create a mutable object to store the compressed method in
+        MutableObject<String> improvedContent = new MutableObject<>();
+
+        // Run the compression and summarization in a read action to avoid threading issues
+        ApplicationManager.getApplication().runReadAction(() -> {
+            improvedContent.setValue(compressing(method));
+        });
+        return improvedContent.getValue();
     }
 
+    /**
+     * Compresses the method
+     * @param method The method to compress as a PyFunction
+     * @return The compressed method as a String
+     */
     private String compressing(@NotNull PyFunction method) {
 
         // Remove comments and docstrings
@@ -129,7 +185,7 @@ public class ExplainMethodAction extends AnAction {
         // Remove spaces at the beginning and end of the string
         compressedContent = compressedContent.trim();
 
-        System.out.println(compressedContent);
+        LOG.warn("Compressed content: " + compressedContent);
 
         return compressedContent;
     }
