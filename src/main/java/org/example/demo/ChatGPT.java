@@ -20,7 +20,8 @@ public class ChatGPT {
     /**
      * This method sends the prompt to ChatGPT and returns the response
      * @param prompt The prompt that the user provides to ChatGPT
-     * @return The response from ChatGPT as a String
+     * @return The response from ChatGPT as a String or "Error" if an error occurred
+     * @see <a href="https://beta.openai.com/docs/api-reference/chat">ChatGPT API Reference</a>
      */
     public static String infer(String prompt){
         String apiKey = readJsonKey();

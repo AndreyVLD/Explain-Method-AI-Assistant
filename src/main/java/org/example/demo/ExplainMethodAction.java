@@ -29,7 +29,7 @@ public class ExplainMethodAction extends AnAction {
     public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
         try {
             Editor editor = anActionEvent.getRequiredData(CommonDataKeys.EDITOR);
-            extractMethod(editor);
+            explainMethod(editor);
         }catch (Exception e){
            LOG.warn("An error occurred during action execution: ",e);
         }
@@ -39,18 +39,10 @@ public class ExplainMethodAction extends AnAction {
      * Extracts the method that the user has selected and displays an explanation for it using ChatGPT
      * @param editor The editor that the user is currently using
      */
-    private void extractMethod(Editor editor){
+    private void explainMethod(Editor editor){
         try{
-            // Get the current file
-            PsiFile psiFile = getPsiFile(editor);
-
-            // The selected element is chosen to be the start of the selection or the caret position
-            SelectionModel selectionModel = editor.getSelectionModel();
-            int start = selectionModel.getSelectionStart();
-            PsiElement selectedElement = psiFile.findElementAt(start);
-
-            // Get the method that the selected element is in
-            PyFunction method =  PsiTreeUtil.getParentOfType(selectedElement, PyFunction.class);
+            // Get the method that the user has selected
+            PyFunction method = extractMethod(editor);
 
             // Get the explanation for the method from ChatGPT
             String explanation = getExplanation(method);
@@ -65,17 +57,37 @@ public class ExplainMethodAction extends AnAction {
     }
 
     /**
+     * Extracts the method that the user has selected
+     * @param editor The editor that the user is currently using
+     * @return The method that the user has selected as a PyFunction
+     */
+    private PyFunction extractMethod(Editor editor) {
+        // Get the current file
+        PsiFile psiFile = getPsiFile(editor);
+
+        // The selected element is chosen to be the start of the selection or the caret position
+        SelectionModel selectionModel = editor.getSelectionModel();
+        int start = selectionModel.getSelectionStart();
+        PsiElement selectedElement = psiFile.findElementAt(start);
+
+        // Get the method that the selected element is in
+        return PsiTreeUtil.getParentOfType(selectedElement, PyFunction.class);
+    }
+
+    /**
      * Gets the explanation for the method from ChatGPT
      * @param method The method to get the explanation for as a PyFunction
      * @return The explanation for the method as a String
      */
     @NotNull
-    private static String getExplanation(PyFunction method) {
+    private  String getExplanation(PyFunction method) {
         String explanation = "No method found";
 
         if(method != null) {
+            String methodText = compressAndSummarizeFunction(method);
+
             // Send the following prompt to ChatGPT: "Explain the method <method text> in plain English."
-            explanation = ChatGPT.infer("Explain the method " + method.getText() + " in plain English.");
+            // explanation = ChatGPT.infer("Explain the method " + methodText + " in plain English.");
             if (explanation.equals("Error")) {
                 explanation = "An error occurred during explanation generation";
                 LOG.warn(explanation);
@@ -96,4 +108,29 @@ public class ExplainMethodAction extends AnAction {
         return psiFile;
     }
 
+    private String compressAndSummarizeFunction(@NotNull PyFunction method) {
+        String compressedContent = compressing(method);
+
+        return compressedContent;
+    }
+
+    private String compressing(@NotNull PyFunction method) {
+
+        // Remove comments and docstrings
+        String compressedContent = method.getText().replaceAll("#.*", "")
+                .replaceAll("('''[\\s\\S]*?'''|\"\"\"[\\s\\S]*?\"\"\")", "");
+
+        // Remove duplicate spaces between characters
+        compressedContent = compressedContent.replaceAll("(?<=\\S) +(?=\\S)", " ");
+
+        // Remove duplicate newlines
+        compressedContent = compressedContent.replaceAll("(\\n\\s*\\n)+", "\n");
+
+        // Remove spaces at the beginning and end of the string
+        compressedContent = compressedContent.trim();
+
+        System.out.println(compressedContent);
+
+        return compressedContent;
+    }
 }

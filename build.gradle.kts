@@ -1,11 +1,11 @@
 plugins {
     id("java")
     id("org.jetbrains.kotlin.jvm") version "1.9.20"
-    id("org.jetbrains.intellij") version "1.16.0"
+    id("org.jetbrains.intellij") version "1.16.1"
 
 }
 dependencies {
-    implementation("org.json:json:20230227")
+    implementation("org.json:json:20231013")
 }
 
 group = "org.example"
