@@ -16,7 +16,7 @@ making it easier to understand and document your code.
 1. Clone the repository.
 2. Open the project in IntelliJ IDEA.
 3. **EXTREMELY IMPORTANT**: in the `resources/META-INF/user_data.json` file you need to add your OpenAI API key. 
-   You can get one [here](https://beta.openai.com/). They key must be added between the quotes in the `api_key` field.
+   You can get one [here](https://beta.openai.com/). The key must be added between the quotes in the `api_key` field.
 4. Run the `runIde` Gradle task, or Run Plugin from the Run menu.
 
 ## Usage
@@ -24,11 +24,11 @@ making it easier to understand and document your code.
 1. When you run the project a PyCharm VM IDE will run as well.
 2. Create a new Python Project or open an existing one.
 3. Select the method you want to explain.
-4. Right-click and choose `Explain This Method!` from the context menu.
-5. The explanation will be displayed in a popup.
-6. **EXTREMELY IMPORTANT**: Since there is asynchronicity involved, you need to wait for the popup to appear, while you 
-can still work on your project. The popup will appear in a couple of seconds in the middle of the screen with the 
-explanation.
+4. The selected method is based on where the start of selection begins. If there is no selection,
+it will use the method found at the caret.
+5. Right-click and choose `Explain This Method!` from the editor popup menu.
+6. The explanation will be displayed in a popup.
+7. **EXTREMELY IMPORTANT**: Please wait for the popup to appear; in the meantime, you can continue working on your project. It will take a few seconds for the popup to appear in the middle of the screen.
 
 ## Configuration
 
