@@ -13,9 +13,9 @@ import java.net.URL;
 
 
 public class ChatGPT {
-
-    private static final String userKey = "";
     private static final Logger LOG = Logger.getInstance(ChatGPT.class);
+    private static final String apiKey = readJsonKey();
+    private static final String url = "https://api.openai.com/v1/chat/completions";
 
     /**
      * This method sends the prompt to ChatGPT and returns the response
@@ -24,9 +24,6 @@ public class ChatGPT {
      * @see <a href="https://beta.openai.com/docs/api-reference/chat">ChatGPT API Reference</a>
      */
     public static String infer(String prompt){
-        String apiKey = readJsonKey();
-        String url = "https://api.openai.com/v1/chat/completions";
-
         try{
             // Create connection
             URL obj = new URL(url);
@@ -72,11 +69,12 @@ public class ChatGPT {
     private static JSONObject getJsonBody(String prompt)
     {
         // Create the JSON body
-        String model = "gpt-4";
+        String model = "gpt-3.5-turbo";
         JSONObject data = new JSONObject();
         data.put("model", model);
-        data.put("max_tokens", 150);
+        data.put("max_tokens", 500);
         data.put("temperature", 0.5);
+        data.put("n", 1);
 
         // Provide conversation history as messages array
         JSONArray messagesArray = new JSONArray();
@@ -84,7 +82,7 @@ public class ChatGPT {
         // The role of the system is to explain the method
         JSONObject systemMessage = new JSONObject();
         systemMessage.put("role", "system");
-        systemMessage.put("content", "I explain Python Methods in Plain English.");
+        systemMessage.put("content", "I explain Python Methods in Plain English in a concise way.");
         messagesArray.put(systemMessage);
 
         // The user provides the prompt
@@ -113,11 +111,22 @@ public class ChatGPT {
         try (InputStream inputStream = classLoader.getResourceAsStream("META-INF/config.json")) {
             if(inputStream == null){
 
-                // If config.json is not found, return the key from the top of this file
-                LOG.warn("Could not find config.json");
-                return userKey;
-            }
-            jsonContent = new String(inputStream.readAllBytes());
+                // If config.json is not found, return the key defined by the user in user_data.json
+                LOG.warn("Could not find config.json in resources folder");
+
+                // Try reading the user_data key
+                try (InputStream inputStream2 = classLoader.getResourceAsStream("META-INF/user_data.json")) {
+                    if(inputStream2 == null){
+                        LOG.warn("Could not find user_data.json in resources folder");
+                        return "Error";
+                    }else
+                        jsonContent = new String(inputStream2.readAllBytes());
+                } catch (IOException e) {
+                    LOG.warn("An error occurred during reading user_data.json: ",e);
+                    return "Error";
+                }
+            }else
+                jsonContent = new String(inputStream.readAllBytes());
         } catch (IOException e) {
             LOG.warn("An error occurred during reading config.json: ",e);
             return "Error";
@@ -125,6 +134,6 @@ public class ChatGPT {
 
         JSONObject json = new JSONObject(jsonContent);
         return json.getString("api_key");
-
     }
+
 }
