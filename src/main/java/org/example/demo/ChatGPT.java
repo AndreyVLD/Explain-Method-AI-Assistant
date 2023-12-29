@@ -72,7 +72,7 @@ public class ChatGPT {
         String model = "gpt-4";
         JSONObject data = new JSONObject();
         data.put("model", model);
-        data.put("max_tokens", 200);
+        data.put("max_tokens", 500);
         data.put("temperature", 0.5);
         data.put("n", 1);
 
@@ -82,7 +82,7 @@ public class ChatGPT {
         // The role of the system is to explain the method
         JSONObject systemMessage = new JSONObject();
         systemMessage.put("role", "system");
-        systemMessage.put("content", "I explain Python Methods in Plain English.");
+        systemMessage.put("content", "I explain Python Methods in Plain English in a concise way.");
         messagesArray.put(systemMessage);
 
         // The user provides the prompt
