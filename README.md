@@ -1,6 +1,6 @@
 # Explain Method Plugin for IntelliJ IDEA
 
-This IntelliJ IDEA plugin allows you to explain Python methods 
+This PyCharm plugin allows you to explain Python methods 
 in plain English using ChatGPT. It provides a concise summary of 
 the method and identifies external references, 
 making it easier to understand and document your code.
